@@ -1,17 +1,17 @@
 pipeline {
-    agent {
-        docker {
-            image 'maven:3.9.8-sapmachine-21'
-            args '-v $HOME/.m2:/root/.m2'
-        }
-    }
-
-    tools {
-        maven 'maven 3.9.8'
-    }
+    agent none
 
     stages {
         stage("build") {
+            when {
+                changeset "**/worker/**"
+            }
+            agent {
+                docker {
+                    image 'maven:3.9.8-sapmachine-21'
+                    args '-v $HOME/.m2:/root/.m2'
+                }
+            }
             steps {
                 echo 'Compiling worker app'
                 dir('worker') {
@@ -21,6 +21,15 @@ pipeline {
         }
 
         stage("test") {
+            when {
+                changeset "**/worker/**"
+            }
+            agent {
+                docker {
+                    image 'maven:3.9.8-sapmachine-21'
+                    args '-v $HOME/.m2:/root/.m2'
+                }
+            }
             steps {
                 echo 'Running Unit Tests on worker app'
                 dir('worker') {
@@ -30,6 +39,16 @@ pipeline {
         }
 
         stage("package") {
+            when {
+                branch 'master'
+                changeset "**/worker/**"
+            }
+            agent {
+                docker {
+                    image 'maven:3.9.8-sapmachine-21'
+                    args '-v $HOME/.m2:/root/.m2'
+                }
+            }
             steps {
                 echo 'Packaging worker app'
                 dir('worker') {
@@ -41,6 +60,11 @@ pipeline {
 
         stage('docker-package') {
             agent any
+
+            when {
+                changeset "**/worker/**"
+                branch 'master'
+            }
 
             steps {
                 echo 'Packaging worker app with docker'
@@ -57,7 +81,7 @@ pipeline {
 
     post {
         always {
-        echo 'Building multibranch pipeline for worker is completed..'
+            echo 'Building multibranch pipeline for worker is completed..'
         }
     }
 }
